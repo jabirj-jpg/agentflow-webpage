@@ -6,7 +6,7 @@
     // Update these prompt templates with your preferred phrasing.
     const promptTemplates = {
         mainGoal: [
-            'MAIN INSTRUCTION: Use the provided industry and main goal to craft a structured AgentFlow prompt. Be as elaborate as possible.'
+            'MAIN INSTRUCTION: Use the provided industry and main goal to craft a structured AgentFlow prompt. Be as elaborative and descriptive as possible.'
         ].join('\n'),
         leadCriteria: [
             'LEAD SCORING (SALES ONLY): Generate multiple weighted criteria applicable to sales.',
