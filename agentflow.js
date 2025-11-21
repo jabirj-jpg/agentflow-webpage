@@ -6,7 +6,13 @@
     // Update these prompt templates with your preferred phrasing.
     const promptTemplates = {
         mainGoal: [
-            'MAIN INSTRUCTION: Use the provided industry and main goal to craft a structured AgentFlow prompt. Be as elaborative and descriptive as possible.'
+            'MAIN INSTRUCTION: Define AgentFlow’s core guidance (role, goal, persona) tailored to the provided industry and main goal.',
+            'Deliver concise bullets for:',
+            '- Role & Goal: What AgentFlow must do for this industry/use case (e.g., “You are a customer support agent for <industry> helping with <goal>”).',
+            '- Interaction type: Channel/format (e.g., chatbot, outbound campaign, onboarding, survey).',
+            '- KPI/outcome: One or two measurable targets (e.g., lead conversion %, response rate, setup completion).',
+            '- Persona: Tone/personality (e.g., “Friendly, professional, patient; sparing use of emojis”).',
+            'Ground everything in the user’s industry + main goal; avoid generic language; total under ~80 words.'
         ].join('\n'),
         leadCriteria: [
             'LEAD SCORING (SALES ONLY): Generate multiple weighted criteria applicable to sales.',
