@@ -12,7 +12,12 @@
             '- Interaction type: Channel/format (e.g., chatbot, outbound campaign, onboarding, survey).',
             '- KPI/outcome: One or two measurable targets (e.g., lead conversion %, response rate, setup completion).',
             '- Persona: Tone/personality (e.g., “Friendly, professional, patient; sparing use of emojis”).',
-            'Ground everything in the user’s industry + main goal; avoid generic language; total under ~80 words.'
+            '- Writing tips: include Objective, Background, Strategy, Response guidance as short bullets:',
+            '  - Objective: 1–3 sentences on scope and success criteria; focus on outcomes.',
+            '  - Background: Evergreen facts if not in KB (e.g., hours, regions); exclude volatile data.',
+            '  - Strategy: Rules of thumb (e.g., verify with knowledge first; if unsure, clarify or hand off; when to stop or ask a question).',
+            '  - Response: Formatting expectations (short paragraphs, bullets for lists, links only if confident; max length if important).',
+            'Ground everything in the user’s industry + main goal; avoid generic language; total under ~120 words.'
         ].join('\n'),
         leadCriteria: [
             'LEAD SCORING (SALES ONLY): Generate multiple weighted criteria applicable to sales.',
