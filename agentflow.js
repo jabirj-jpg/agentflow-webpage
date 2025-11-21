@@ -17,7 +17,7 @@
             '  - Background: Evergreen facts if not in KB (e.g., hours, regions); exclude volatile data.',
             '  - Strategy: Rules of thumb (e.g., verify with knowledge first; if unsure, clarify or hand off; when to stop or ask a question).',
             '  - Response: Formatting expectations (short paragraphs, bullets for lists, links only if confident; max length if important).',
-            'Ground everything in the user’s industry + main goal; avoid generic language; total under ~120 words.'
+            'Ground everything in the user’s industry + main goal + business name/summary (if provided); avoid generic language; total under ~120 words.'
         ].join('\n'),
         leadCriteria: [
             'LEAD SCORING (SALES ONLY): Generate multiple weighted criteria applicable to sales.',
@@ -55,6 +55,7 @@
     const outputs = {
         main: document.getElementById('output-main'),
         tone: document.getElementById('output-tone'),
+        intro: document.getElementById('output-intro'),
         guardrails: document.getElementById('output-guardrails'),
         lead: document.getElementById('output-lead'),
         exit: document.getElementById('output-exit')
@@ -62,6 +63,7 @@
     const leadToggle = document.getElementById('leadToggle');
     const leadInput = document.getElementById('leadScore');
     const leadWrapper = document.getElementById('leadTextWrapper');
+    const businessUrlInput = document.getElementById('businessUrl');
     const copyButtons = Array.from(document.querySelectorAll('.copy-btn'));
     const submitButton = form?.querySelector('button[type="submit"]');
 
@@ -97,8 +99,20 @@
             toneOfVoice: formData.get('toneOfVoice')?.toString().trim() || '',
             leadScore: leadToggle.checked ? formData.get('leadScore')?.toString().trim() || '' : '',
             leadEnabled: leadToggle.checked,
-            exitConditions: formData.get('exitConditions')?.toString().trim() || ''
+            exitConditions: formData.get('exitConditions')?.toString().trim() || '',
+            businessUrl: formData.get('businessUrl')?.toString().trim() || ''
         };
+
+        const businessName = deriveBusinessName(payload.businessUrl);
+        let siteSummary = '';
+        if (payload.businessUrl) {
+            try {
+                siteSummary = await summarizeSite(payload.businessUrl);
+                console.info('Site summary:', siteSummary);
+            } catch (err) {
+                console.warn('Site summary failed:', err);
+            }
+        }
 
         const requestBody = {
             model: MODEL,
@@ -106,6 +120,9 @@
                 {
                     role: 'system',
                     content: [
+                        `Business URL: ${payload.businessUrl || 'None provided.'}`,
+                        `Background (site summary): ${siteSummary || 'Not available.'}`,
+                        `Business name/context: ${businessName || 'Not available.'}`,
                         `You are composing an AgentFlow spec for ${payload.industry || 'an unspecified industry'}.`,
                         `Adopt this tone: ${payload.toneOfVoice || 'neutral'}.`,
                         `Guardrails: ${payload.guardrails || 'None provided.'}`
@@ -141,7 +158,8 @@
             `Industry context: ${data.industry || 'N/A'}`,
             `Preferred tone of voice: ${data.toneOfVoice || 'N/A'}`,
             promptTemplates.tone,
-            `Respond ONLY as JSON with keys: main_instruction, message_tone, guardrails, hot_lead_criteria, exit_conditions. No markdown, no prose outside JSON.`
+            'AI INTRO MESSAGE: 1-2 sentences to greet the user, state the agent role and value, aligned to the business name/summary, industry, main goal, and tone. Keep it warm, concise, and on-topic.',
+            `Respond ONLY as JSON with keys: main_instruction, message_tone, ai_intro_message, guardrails, hot_lead_criteria, exit_conditions. No markdown, no prose outside JSON.`
         ].join('\n\n');
     }
 
@@ -181,6 +199,7 @@
         const parsed = parseJsonSafe(rawContent);
         const main = formatValue(parsed?.main_instruction) || rawContent || 'No content returned.';
         const tone = formatValue(parsed?.message_tone) || 'No tone guidance returned.';
+        const intro = formatValue(parsed?.ai_intro_message) || 'No intro message returned.';
         const guardrails = formatValue(parsed?.guardrails) || 'No guardrails returned.';
         const lead = leadToggle.checked
             ? formatValue(parsed?.hot_lead_criteria) || 'No lead criteria returned.'
@@ -189,12 +208,14 @@
 
         outputs.main.classList.remove('muted');
         outputs.tone.classList.remove('muted');
+        outputs.intro.classList.remove('muted');
         outputs.guardrails.classList.remove('muted');
         outputs.lead.classList.remove('muted');
         outputs.exit.classList.remove('muted');
 
         outputs.main.textContent = main;
         outputs.tone.textContent = tone;
+        outputs.intro.textContent = intro;
         outputs.guardrails.textContent = guardrails;
         outputs.lead.textContent = lead;
         outputs.exit.textContent = exit;
@@ -240,5 +261,39 @@
             return entries.join('\n');
         }
         return JSON.stringify(value, null, 2);
+    }
+
+    async function summarizeSite(url) {
+        const response = await fetch('/api/summarize', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url })
+        });
+
+        if (!response.ok) {
+            const text = await response.text().catch(() => '');
+            throw new Error(`Summarize failed: ${response.status} ${text}`);
+        }
+
+        const data = await response.json();
+        return data.summary?.trim() || '';
+    }
+
+    function deriveBusinessName(url) {
+        if (!url) return '';
+        try {
+            const parsed = new URL(url);
+            const host = parsed.hostname.replace(/^www\./i, '');
+            // Use host without TLD as a lightweight name guess
+            const parts = host.split('.');
+            if (parts.length > 1) {
+                return parts[0];
+            }
+            return host;
+        } catch {
+            return '';
+        }
     }
 })();

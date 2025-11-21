@@ -21,6 +21,11 @@
             </div>
 
             <div class="field">
+                <label for="businessUrl">Business URL (optional)</label>
+                <input type="url" id="businessUrl" name="businessUrl" placeholder="https://example.com">
+            </div>
+
+            <div class="field">
                 <label for="mainGoal">Main Goal</label>
                 <input type="text" id="mainGoal" name="mainGoal" placeholder="What outcome should the agent drive?" required>
             </div>
@@ -69,6 +74,13 @@
                     <button class="copy-btn" data-target="output-tone" type="button">Copy</button>
                 </div>
                 <pre id="output-tone" class="output muted">Waiting for input…</pre>
+            </div>
+            <div class="output-card">
+                <div class="output-header">
+                    <span>AI Intro Message</span>
+                    <button class="copy-btn" data-target="output-intro" type="button">Copy</button>
+                </div>
+                <pre id="output-intro" class="output muted">Waiting for input…</pre>
             </div>
             <div class="output-card">
                 <div class="output-header">

@@ -53,6 +53,56 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
+    if (req.method === 'POST' && url.pathname === '/api/summarize') {
+        try {
+            const body = await readBody(req);
+            const { url: targetUrl } = JSON.parse(body || '{}');
+            if (!targetUrl) {
+                return respond(res, 400, { error: 'Missing url' });
+            }
+            const parsed = new URL(targetUrl);
+            if (!['http:', 'https:'].includes(parsed.protocol)) {
+                return respond(res, 400, { error: 'Invalid URL protocol' });
+            }
+
+            const pageText = await fetchTextWithLimit(targetUrl, 15000);
+            const trimmed = stripHtml(pageText).slice(0, 8000);
+
+            const summaryReq = {
+                model: 'gpt-4o-mini',
+                temperature: 0.3,
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'Summarize the business website content in <=120 words. Focus on products/services, target audience, regions served, and value proposition. Avoid fluff and ignore navigation/footer text.'
+                    },
+                    { role: 'user', content: trimmed || 'No content found.' }
+                ]
+            };
+
+            const apiResponse = await fetch(OPENAI_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${OPENAI_API_KEY}`
+                },
+                body: JSON.stringify(summaryReq)
+            });
+
+            const data = await apiResponse.json();
+            if (!apiResponse.ok) {
+                return respond(res, apiResponse.status, { error: data.error || data });
+            }
+
+            const messageContent = data.choices?.[0]?.message?.content;
+            const summary = normalizeContent(messageContent);
+            return respond(res, 200, { summary });
+        } catch (error) {
+            console.error('Summarize error:', error);
+            return respond(res, 500, { error: 'Unexpected server error.' });
+        }
+    }
+
     if (req.method === 'GET') {
         return serveStatic(url, res);
     }
@@ -155,4 +205,29 @@ function normalizeContent(content) {
     }
     // Fallback: stringify objects
     return JSON.stringify(content, null, 2);
+}
+
+async function fetchTextWithLimit(targetUrl, limit) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000);
+    try {
+        const response = await fetch(targetUrl, { signal: controller.signal, headers: { 'User-Agent': 'AgentFlow/1.0' } });
+        if (!response.ok) {
+            throw new Error(`Fetch failed ${response.status}`);
+        }
+        const text = await response.text();
+        return text.slice(0, limit);
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
+function stripHtml(html) {
+    if (!html) return '';
+    return html
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
