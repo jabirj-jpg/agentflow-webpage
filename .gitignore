@@ -1,0 +1,18 @@
+# Node / build
+node_modules
+npm-debug.log*
+dist
+.DS_Store
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+
+# IDE/editor
+.vscode
+.idea

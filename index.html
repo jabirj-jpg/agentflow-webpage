@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentFlow Input Form</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="agentflow.js" defer></script>
+    </head>
+    <body>
+    <div class="card">
+        <h1>AgentFlow Input Form</h1>
+        <p class="subtitle">Configure the flow details in a clean SleekFlow-inspired workspace.</p>
+        <form id="agentFlowForm">
+            <div class="field">
+                <label for="industry">Industry</label>
+                <input type="text" id="industry" name="industry" placeholder="e.g., FinTech, Retail" required>
+            </div>
+
+            <div class="field">
+                <label for="mainGoal">Main Goal</label>
+                <input type="text" id="mainGoal" name="mainGoal" placeholder="What outcome should the agent drive?" required>
+            </div>
+
+            <div class="field">
+                <label for="toneOfVoice">Message Tone of Voice</label>
+                <input type="text" id="toneOfVoice" name="toneOfVoice" placeholder="Friendly, concise, formal..." required>
+            </div>
+
+            <div class="field wide">
+                <div class="toggle-row">
+                    <label for="leadToggle">Lead Score Criteria (Sales Use Case Only)</label>
+                    <label class="switch">
+                        <input type="checkbox" id="leadToggle" name="leadToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div id="leadTextWrapper" class="lead-text-wrapper hidden">
+                    <input type="text" id="leadScore" name="leadScore" placeholder="e.g., demo booked + budget confirmed; opens ≥3 emails" disabled>
+                </div>
+            </div>
+
+            <div class="field wide">
+                <label for="guardrails">Guardrails</label>
+                <textarea id="guardrails" name="guardrails" rows="4" placeholder="Key boundaries to keep the agent on-brand" required></textarea>
+            </div>
+
+            <div class="field wide">
+                <label for="exitConditions">Exit Conditions for AgentFlow</label>
+                <textarea id="exitConditions" name="exitConditions" rows="4" placeholder="When should the flow finish or hand off?" required></textarea>
+            </div>
+
+            <button type="submit">Submit</button>
+        </form>
+        <div class="outputs">
+            <div class="output-card">
+                <div class="output-header">
+                    <span>Main Instruction</span>
+                    <button class="copy-btn" data-target="output-main" type="button">Copy</button>
+                </div>
+                <pre id="output-main" class="output muted">Waiting for input…</pre>
+            </div>
+            <div class="output-card">
+                <div class="output-header">
+                    <span>Message Tone of Voice</span>
+                    <button class="copy-btn" data-target="output-tone" type="button">Copy</button>
+                </div>
+                <pre id="output-tone" class="output muted">Waiting for input…</pre>
+            </div>
+            <div class="output-card">
+                <div class="output-header">
+                    <span>Guardrails</span>
+                    <button class="copy-btn" data-target="output-guardrails" type="button">Copy</button>
+                </div>
+                <pre id="output-guardrails" class="output muted">Waiting for input…</pre>
+            </div>
+            <div class="output-card">
+                <div class="output-header">
+                    <span>Hot Lead Criteria</span>
+                    <button class="copy-btn" data-target="output-lead" type="button">Copy</button>
+                </div>
+                <pre id="output-lead" class="output muted">Waiting for input…</pre>
+            </div>
+            <div class="output-card">
+                <div class="output-header">
+                    <span>Exit Conditions</span>
+                    <button class="copy-btn" data-target="output-exit" type="button">Copy</button>
+                </div>
+                <pre id="output-exit" class="output muted">Waiting for input…</pre>
+            </div>
+        </div>
+    </div>
+    </body>
+    </html>
