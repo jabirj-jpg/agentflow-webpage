@@ -16,7 +16,6 @@ COPY . .
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
-EXPOSE 8080
-ENV PORT=8080
+
 
 CMD ["node", "server.js"]
