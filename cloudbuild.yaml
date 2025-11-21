@@ -31,8 +31,6 @@ steps:
       - '--allow-unauthenticated'
       - '--set-secrets'
       - OPENAI_API_KEY=openai-api-key:latest
-      - '--set-env-vars'
-      - PORT=8080
 
 images:
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$SHORT_SHA'
