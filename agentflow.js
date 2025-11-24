@@ -23,7 +23,7 @@
             '#Content: {{content boundaries}}'
         ].join('\n'),
         intro: [
-            'AI INTRO MESSAGE: 1-2 sentences to greet the user, state the agent role and value, aligned to the business name/summary and goal/use cases. Keep it warm, concise, and on-topic.'
+            'AI INTRO MESSAGE: 1-2 sentences to greet the user, state the agent role and value, aligned to the business name/summary and goal/use cases. Keep it warm, concise, on-topic and include emojis.'
         ].join('\n'),
         guardrails: [
             'GUARDRAILS: Based on the business context, industry (especially if regulated), and the goal/use cases, generate specific, context-adapted guardrails', 
@@ -106,7 +106,7 @@
                 console.info('Site summary:', siteSummary);
             } catch (err) {
                 console.error('Site summary failed:', err);
-                renderError(`Site summary failed: ${err.message || err}`);
+                renderError(`WEBSITTE INVALID! 😾`);
                 return;
             }
         }
