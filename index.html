@@ -16,46 +16,13 @@
         <p class="subtitle">Configure the flow details in a clean SleekFlow-inspired workspace.</p>
         <form id="agentFlowForm">
             <div class="field">
-                <label for="industry">Industry</label>
-                <input type="text" id="industry" name="industry" placeholder="e.g., FinTech, Retail" required>
-            </div>
-
-            <div class="field">
-                <label for="businessUrl">Business URL (optional)</label>
-                <input type="url" id="businessUrl" name="businessUrl" placeholder="https://example.com">
-            </div>
-
-            <div class="field">
-                <label for="mainGoal">Main Goal</label>
-                <input type="text" id="mainGoal" name="mainGoal" placeholder="What outcome should the agent drive?" required>
-            </div>
-
-            <div class="field">
-                <label for="toneOfVoice">Message Tone of Voice</label>
-                <input type="text" id="toneOfVoice" name="toneOfVoice" placeholder="Friendly, concise, formal..." required>
+                <label for="businessUrl">Business URL</label>
+                <input type="url" id="businessUrl" name="businessUrl" placeholder="https://example.com" required>
             </div>
 
             <div class="field wide">
-                <div class="toggle-row">
-                    <label for="leadToggle">Lead Score Criteria (Sales Use Case Only)</label>
-                    <label class="switch">
-                        <input type="checkbox" id="leadToggle" name="leadToggle">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div id="leadTextWrapper" class="lead-text-wrapper hidden">
-                    <input type="text" id="leadScore" name="leadScore" placeholder="e.g., timeline mentioned, budget stated, etc." disabled>
-                </div>
-            </div>
-
-            <div class="field wide">
-                <label for="guardrails">Guardrails</label>
-                <textarea id="guardrails" name="guardrails" rows="4" placeholder="e.g., Do not mention specific pricing, do not compare with competitor, etc." required></textarea>
-            </div>
-
-            <div class="field wide">
-                <label for="exitConditions">Exit Conditions for AgentFlow</label>
-                <textarea id="exitConditions" name="exitConditions" rows="4" placeholder="When should the flow finish or hand off?" required></textarea>
+                <label for="mainGoal">Main goal and use cases</label>
+                <textarea id="mainGoal" name="mainGoal" rows="4" placeholder="Describe the primary goal and key use cases for the agent." required></textarea>
             </div>
 
             <button type="submit">Submit</button>

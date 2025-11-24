@@ -2,37 +2,51 @@
     // === Editable settings ===
     const MODEL = 'gpt-4o-mini';
     const PROXY_URL = '/api/agentflow';
+    const DEBUG_LOG = true; // set to true to log API requests/responses to console
 
-    // Update these prompt templates with your preferred phrasing.
     const promptTemplates = {
-        mainGoal: [
-            'MAIN INSTRUCTION: Define AgentFlow’s core guidance (role, goal, persona) tailored to the provided industry and main goal.',
+        mainInstruction: [
+            'MAIN INSTRUCTION: Define AgentFlow’s core guidance (role, goal, persona) tailored to the inferred industry and the provided main goal/use cases.',
             'Deliver concise bullets for:',
-            '- Role & Goal: What AgentFlow must do for this industry/use case (e.g., “You are a customer support agent for <industry> helping with <goal>”).',
-            '- Interaction type: Channel/format (e.g., chatbot, outbound campaign, onboarding, survey).',
-            '- KPI/outcome: One or two measurable targets (e.g., lead conversion %, response rate, setup completion).',
-            '- Persona: Tone/personality (e.g., “Friendly, professional, patient; sparing use of emojis”).',
-            '- Writing tips: include Objective, Background, Strategy, Response guidance as short bullets:',
-            '  - Objective: 1–3 sentences on scope and success criteria; focus on outcomes.',
-            '  - Background: Evergreen facts if not in KB (e.g., hours, regions); exclude volatile data.',
-            '  - Strategy: Rules of thumb (e.g., verify with knowledge first; if unsure, clarify or hand off; when to stop or ask a question).',
-            '  - Response: Formatting expectations (short paragraphs, bullets for lists, links only if confident; max length if important).',
-            'Ground everything in the user’s industry + main goal + business name/summary (if provided); avoid generic language; total under ~120 words.'
+            '- Role & Goal: {{What AgentFlow must do for this use case.}}',
+            '- Interaction type: Human conversation',
+            '- KPI/outcome: {{One or two measurable targets.}}',
+            '- Persona: {{Tone/personality (e.g., friendly, professional, patient; sparing use of emojis).}}',
+            '- Writing tips: {{Objective, Background, Strategy, Response (keep brief).}}',
+            'Ground everything in business name/summary + goal; avoid generic language; total under ~120 words.'
+        ].join('\n'),
+        tone: [
+            'MESSAGE TONE OF VOICE: Infer from the business summary and goal/use cases. Use this format:',
+            '#Tone: {{tone guidance}}',
+            '#Format: {{format guidance}}',
+            '#Goal: {{message goal}}',
+            '#Content: {{content boundaries}}'
+        ].join('\n'),
+        intro: [
+            'AI INTRO MESSAGE: 1-2 sentences to greet the user, state the agent role and value, aligned to the business name/summary and goal/use cases. Keep it warm, concise, and on-topic.'
+        ].join('\n'),
+        guardrails: [
+            'GUARDRAILS: Based on the business context, industry (especially if regulated), and the goal/use cases, generate specific, context-adapted guardrails', 
+            'you MUST always output at least these three universal guardrails, using the format "Observe for / How to react / ---" structure.',
+            'However, you may reword Guardrail #1 and Guardrail #2 to match the business’s tone, terminology, and industry norms — without changing the underlying rule.',
+            'Guardrail #1:(Competitors inquiries)',
+            'Observe for: {{context-aware rewrite of competitor-related inquiries relevant to this business, include competitor names if applicable}}',
+            'How to react: {{context-aware rewrite that keeps the rule: do not discuss competitors; redirect focus to our offering}}',
+            '---',
+            'Guardrail #2:(Pricing inquiries)',
+            'Observe for: {{context-aware rewrite of pricing, quotation, costs, fees, or package inquiries}}',
+            'How to react: {{context-aware rewrite that keeps the rule: do not quote pricing; direct user to human/sales for pricing details}}',
+            '---',
+            'Guardrail #3:(Out-of-scope inquiries)',
+            'Observe for: {{inquiries outside the defined goal/use cases or business context}}',
+            'How to react: {{politely inform the user that the inquiry is outside the agent’s scope and suggest contacting a human for further assistance}}'
         ].join('\n'),
         leadCriteria: [
-            'LEAD SCORING (SALES ONLY): Generate multiple weighted criteria applicable to sales.',
+            'LEAD SCORING (SALES ONLY): Generate multiple weighted criteria applicable to sales. If not sales-related, respond with "Not applicable".',
             'Format each criterion exactly as:',
             'Lead score weight: {{0-100%}}',
             'Criteria: {{generated output}}',
-            'All lead score weights must sum to 100% in total.',
-            'Base the criteria on the user input and industry context.'
-        ].join('\n'),
-        guardrails: [
-            'GUARDRAILS: Tailor to the provided guardrails and industry (especially regulated).',
-            'For each guardrail, use the format:',
-            'Observe for: {{generated situation}}',
-            'How to react: {{how an AI Agent should react to the situation}}',
-            'Provide multiple guardrails if appropriate'
+            'All lead score weights must sum to 100% in total.'
         ].join('\n'),
         exitConditions: [
             'EXIT CONDITIONS: Define how and when the AI Agent should end or hand over to a human.',
@@ -41,13 +55,6 @@
             'Condition type: strictly one of ("exit based on message signal", "exit when media file is encountered", "exit based on lead score - only for sales use case")',
             'Exit condition: {{generated scenario to exit}}',
             'Provide multiple exit conditions if appropriate.'
-        ].join('\n'),
-        tone: [
-            'MESSAGE TONE OF VOICE: Use the user-provided tone, industry, and main goal to create guidance in this exact format:',
-            '#Tone: {{tone guidance}}',
-            '#Format: {{format guidance}}',
-            '#Goal: {{message goal}}',
-            '#Content: {{content boundaries}}'
         ].join('\n')
     };
 
@@ -60,20 +67,14 @@
         lead: document.getElementById('output-lead'),
         exit: document.getElementById('output-exit')
     };
-    const leadToggle = document.getElementById('leadToggle');
-    const leadInput = document.getElementById('leadScore');
-    const leadWrapper = document.getElementById('leadTextWrapper');
     const businessUrlInput = document.getElementById('businessUrl');
     const copyButtons = Array.from(document.querySelectorAll('.copy-btn'));
     const submitButton = form?.querySelector('button[type="submit"]');
 
-    if (!form || Object.values(outputs).some(el => !el) || !leadToggle || !leadInput || !leadWrapper) {
+    if (!form || Object.values(outputs).some(el => !el)) {
         console.error('AgentFlow form or output containers not found.');
         return;
     }
-
-    syncLeadState();
-    leadToggle.addEventListener('change', syncLeadState);
 
     copyButtons.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -93,13 +94,7 @@
 
         const formData = new FormData(form);
         const payload = {
-            industry: formData.get('industry')?.toString().trim() || '',
             mainGoal: formData.get('mainGoal')?.toString().trim() || '',
-            guardrails: formData.get('guardrails')?.toString().trim() || '',
-            toneOfVoice: formData.get('toneOfVoice')?.toString().trim() || '',
-            leadScore: leadToggle.checked ? formData.get('leadScore')?.toString().trim() || '' : '',
-            leadEnabled: leadToggle.checked,
-            exitConditions: formData.get('exitConditions')?.toString().trim() || '',
             businessUrl: formData.get('businessUrl')?.toString().trim() || ''
         };
 
@@ -114,54 +109,30 @@
             }
         }
 
-        const requestBody = {
-            model: MODEL,
-            messages: [
-                {
-                    role: 'system',
-                    content: [
-                        `Business URL: ${payload.businessUrl || 'None provided.'}`,
-                        `Background (site summary): ${siteSummary || 'Not available.'}`,
-                        `Business name/context: ${businessName || 'Not available.'}`,
-                        `You are composing an AgentFlow spec for ${payload.industry || 'an unspecified industry'}.`,
-                        `Adopt this tone: ${payload.toneOfVoice || 'neutral'}.`,
-                        `Guardrails: ${payload.guardrails || 'None provided.'}`
-                    ].join('\n')
-                },
-                {
-                    role: 'user',
-                    content: buildUserPrompt(payload)
-                }
-            ],
-            temperature: 0.2
-        };
+        const baseContext = [
+            `Business URL: ${payload.businessUrl || 'None provided.'}`,
+            `Business name/context: ${businessName || 'Not available.'}`,
+            `Background (site summary): ${siteSummary || 'Not available.'}`,
+            `Goal/use cases: ${payload.mainGoal || 'N/A'}`
+        ].join('\n');
 
         setLoading(true);
         try {
-            const content = await callProxy(requestBody);
-            renderOutputs(content);
+            const [main, tone, intro, guardrails, lead, exit] = await Promise.all([
+                callSection(promptTemplates.mainInstruction, baseContext),
+                callSection(promptTemplates.tone, baseContext),
+                callSection(promptTemplates.intro, baseContext),
+                callSection(promptTemplates.guardrails, baseContext),
+                maybeCallLead(promptTemplates.leadCriteria, baseContext, payload.mainGoal),
+                callSection(promptTemplates.exitConditions, baseContext)
+            ]);
+            renderOutputs({ main, tone, intro, guardrails, lead, exit });
         } catch (error) {
             renderError(error.message);
         } finally {
             setLoading(false);
         }
     });
-
-    function buildUserPrompt(data) {
-        return [
-            `${promptTemplates.mainGoal}\n${data.mainGoal || 'N/A'}`,
-            data.leadEnabled
-                ? `${promptTemplates.leadCriteria}\n${data.leadScore || 'N/A'}`
-                : 'Hot lead criteria: disabled by user toggle.',
-            `${promptTemplates.guardrails}\n${data.guardrails || 'N/A'}`,
-            `${promptTemplates.exitConditions}\n${data.exitConditions || 'N/A'}`,
-            `Industry context: ${data.industry || 'N/A'}`,
-            `Preferred tone of voice: ${data.toneOfVoice || 'N/A'}`,
-            promptTemplates.tone,
-            'AI INTRO MESSAGE: 1-2 sentences to greet the user, state the agent role and value, aligned to the business name/summary, industry, main goal, and tone. Keep it warm, concise, and on-topic.',
-            `Respond ONLY as JSON with keys: main_instruction, message_tone, ai_intro_message, guardrails, hot_lead_criteria, exit_conditions. No markdown, no prose outside JSON.`
-        ].join('\n\n');
-    }
 
     async function callProxy(body) {
         const response = await fetch(PROXY_URL, {
@@ -172,15 +143,44 @@
             body: JSON.stringify(body)
         });
 
+        if (DEBUG_LOG) {
+            console.debug('AgentFlow request:', body);
+        }
+
         if (!response.ok) {
             const errorText = await response.text().catch(() => '');
             throw new Error(`OpenAI API error (${response.status}): ${errorText || response.statusText}`);
         }
 
         const data = await response.json();
+        if (DEBUG_LOG) {
+            console.debug('AgentFlow response:', data);
+        }
         const content = data.content || data.choices?.[0]?.message?.content || '';
         if (typeof content === 'string') return content;
         return JSON.stringify(content);
+    }
+
+    async function callSection(sectionPrompt, baseContext) {
+        const body = {
+            model: MODEL,
+            temperature: 0.2,
+            messages: [
+                { role: 'system', content: [baseContext, 'Respond concisely for this section only.'].join('\n') },
+                { role: 'user', content: sectionPrompt }
+            ]
+        };
+        const content = await callProxy(body);
+        const parsed = parseJsonSafe(content);
+        if (parsed) return parsed;
+        return content;
+    }
+
+    async function maybeCallLead(sectionPrompt, baseContext, goal) {
+        if (!isSalesGoal(goal)) {
+            return 'Not applicable (goal/use cases are not sales-related).';
+        }
+        return callSection(sectionPrompt, baseContext);
     }
 
     function setLoading(isLoading) {
@@ -195,16 +195,13 @@
         }
     }
 
-    function renderOutputs(rawContent) {
-        const parsed = parseJsonSafe(rawContent);
-        const main = formatValue(parsed?.main_instruction) || rawContent || 'No content returned.';
-        const tone = formatValue(parsed?.message_tone) || 'No tone guidance returned.';
-        const intro = formatValue(parsed?.ai_intro_message) || 'No intro message returned.';
-        const guardrails = formatValue(parsed?.guardrails) || 'No guardrails returned.';
-        const lead = leadToggle.checked
-            ? formatValue(parsed?.hot_lead_criteria) || 'No lead criteria returned.'
-            : 'Lead criteria disabled.';
-        const exit = formatValue(parsed?.exit_conditions) || 'No exit conditions returned.';
+    function renderOutputs(parts) {
+        const main = formatValue(parts.main) || 'No content returned.';
+        const tone = formatValue(parts.tone) || 'No tone guidance returned.';
+        const intro = formatValue(parts.intro) || 'No intro message returned.';
+        const guardrails = formatValue(parts.guardrails) || 'No guardrails returned.';
+        const lead = formatValue(parts.lead) || 'Not applicable.';
+        const exit = formatValue(parts.exit) || 'No exit conditions returned.';
 
         outputs.main.classList.remove('muted');
         outputs.tone.classList.remove('muted');
@@ -234,15 +231,6 @@
             return JSON.parse(content);
         } catch {
             return null;
-        }
-    }
-
-    function syncLeadState() {
-        const enabled = leadToggle.checked;
-        leadWrapper.classList.toggle('hidden', !enabled);
-        leadInput.disabled = !enabled;
-        if (!enabled) {
-            leadInput.value = '';
         }
     }
 
@@ -286,7 +274,6 @@
         try {
             const parsed = new URL(url);
             const host = parsed.hostname.replace(/^www\./i, '');
-            // Use host without TLD as a lightweight name guess
             const parts = host.split('.');
             if (parts.length > 1) {
                 return parts[0];
@@ -295,5 +282,11 @@
         } catch {
             return '';
         }
+    }
+
+    function isSalesGoal(text) {
+        if (!text) return false;
+        const hay = text.toLowerCase();
+        return ['sale', 'sales', 'lead', 'pipeline', 'deal', 'book a demo', 'demo', 'quote', 'pricing', 'prospect', 'opportunity'].some(k => hay.includes(k));
     }
 })();
