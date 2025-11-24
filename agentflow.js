@@ -105,7 +105,9 @@
                 siteSummary = await summarizeSite(payload.businessUrl);
                 console.info('Site summary:', siteSummary);
             } catch (err) {
-                console.warn('Site summary failed:', err);
+                console.error('Site summary failed:', err);
+                renderError(`Site summary failed: ${err.message || err}`);
+                return;
             }
         }
 
