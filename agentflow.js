@@ -1,6 +1,6 @@
 (() => {
     // === Editable settings ===
-    const MODEL = 'gpt-4o-mini';
+    const MODEL = 'gpt-5-mini'; // gpt-4o-mini
     const PROXY_URL = '/api/agentflow';
     const DEBUG_LOG = true; // set to true to log API requests/responses to console
 
@@ -70,6 +70,7 @@
     const businessUrlInput = document.getElementById('businessUrl');
     const copyButtons = Array.from(document.querySelectorAll('.copy-btn'));
     const submitButton = form?.querySelector('button[type="submit"]');
+    const loader = document.getElementById('loader');
 
     if (!form || Object.values(outputs).some(el => !el)) {
         console.error('AgentFlow form or output containers not found.');
@@ -166,7 +167,7 @@
     async function callSection(sectionPrompt, baseContext) {
         const body = {
             model: MODEL,
-            temperature: 0.2,
+            temperature: 1, // gpt-4o-mini uses 0.2 for summarization; here we want more creativity
             messages: [
                 { role: 'system', content: [baseContext, 'Respond concisely for this section only.'].join('\n') },
                 { role: 'user', content: sectionPrompt }
@@ -189,6 +190,9 @@
         if (!submitButton) return;
         submitButton.disabled = isLoading;
         submitButton.textContent = isLoading ? 'Generating…' : 'Submit';
+        if (loader) {
+            loader.classList.toggle('hidden', !isLoading);
+        }
         if (isLoading) {
             Object.values(outputs).forEach(el => {
                 el.classList.add('muted');

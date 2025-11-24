@@ -60,6 +60,37 @@ h1 {
     font-size: 15px;
 }
 
+.loader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(25, 201, 229, 0.08);
+    color: var(--text);
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.loader.hidden {
+    display: none;
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #19c9e5;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 form {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
