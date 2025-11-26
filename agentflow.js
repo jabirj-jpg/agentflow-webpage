@@ -107,7 +107,7 @@
                 console.info('Site summary:', siteSummary);
             } catch (err) {
                 console.error('Site summary failed:', err);
-                renderError(`WEBSITTE INVALID! 😾`);
+                renderError(`Website looks invalid 😾 or I’m blocked from accessing it.`);
                 return;
             }
         }
